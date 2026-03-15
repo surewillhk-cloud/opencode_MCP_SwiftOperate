@@ -1,0 +1,163 @@
+# LLM Agent Configuration
+# All models routed through OpenRouter
+
+defaults:
+  model: "openrouter/default"
+  temperature: 0.7
+  max_tokens: 4000
+  router_model: "google/gemini-3.1-flash-lite-preview"
+
+providers:
+  openrouter:
+    api_key: "${OPENROUTER_API_KEY}"
+    base_url: "https://openrouter.ai/api/v1"
+
+models:
+  nvidia/nemotron-3-super:free:
+    provider: "openrouter"
+    type: "chat"
+    context_window: 1000000
+  minimax-m2.5:
+    provider: "openrouter"
+    type: "chat"
+  openai/gpt-5.4:
+    provider: "openrouter"
+    type: "chat"
+  anthropic/claude-4.6-sonnet:
+    provider: "openrouter"
+    type: "chat"
+  google/gemini-3.1-pro-preview:
+    provider: "openrouter"
+    type: "chat"
+  google/gemini-3.1-flash-lite-preview:
+    provider: "openrouter"
+    type: "chat"
+
+agents:
+  architect:
+    model: "google/gemini-3.1-pro-preview"
+    temperature: 0.3
+    description: "Commander - requirement decomposition and task distribution"
+    agent_md_path: "opencode-agent-skill/.opencode/agent/architect.md"
+    skills:
+      - "architecture-design"
+      - "prd-methodology"
+    max_iterations: 10
+
+  ui-prompt:
+    model: "minimax-m2.5"
+    temperature: 0.9
+    description: "UI Prompt Engineer"
+    agent_md_path: "opencode-agent-skill/.opencode/agent/ui-prompt.md"
+    skills:
+      - "ui-figma-playbook"
+      - "ui-imagen-guide"
+      - "ui-aistudio-guide"
+    max_iterations: 3
+
+  ui-generator:
+    model: "openai/gpt-5.4"
+    temperature: 0.8
+    description: "UI Visual Generation Expert"
+    agent_md_path: "opencode-agent-skill/.opencode/agent/ui-generator.md"
+    skills:
+      - "ui-figma-playbook"
+      - "web-design-guidelines"
+    max_iterations: 3
+
+  frontend-dev:
+    model: "minimax-m2.5"
+    temperature: 0.5
+    description: "Frontend Developer"
+    agent_md_path: "opencode-agent-skill/.opencode/agent/frontend-dev.md"
+    skills:
+      - "dev-standards"
+      - "web-design-guidelines"
+      - "composition-patterns"
+      - "vercel-deploy"
+    max_iterations: 10
+
+  backend-dev:
+    model: "anthropic/claude-4.6-sonnet"
+    temperature: 0.5
+    description: "Backend Developer"
+    agent_md_path: "opencode-agent-skill/.opencode/agent/backend-dev.md"
+    skills:
+      - "dev-standards"
+      - "architecture-design"
+    max_iterations: 10
+
+  guardian:
+    model: "minimax-m2.5"
+    temperature: 0.3
+    description: "Quality Guardian - QA + Security"
+    agent_md_path: "opencode-agent-skill/.opencode/agent/guardian.md"
+    skills:
+      - "test-checklist"
+      - "security-audit"
+      - "code-refactoring"
+    max_iterations: 5
+
+  operator:
+    model: "google/gemini-3.1-flash-lite-preview"
+    temperature: 0.4
+    description: "DevOps Operator"
+    agent_md_path: "opencode-agent-skill/.opencode/agent/operator.md"
+    skills:
+      - "devops-automation"
+      - "vercel-deploy"
+    max_iterations: 3
+
+workflows:
+  full_product:
+    steps:
+      - architect
+      - ui-prompt
+      - ui-generator
+      - frontend-dev
+      - backend-dev
+      - guardian
+
+  quick_dev:
+    steps:
+      - ["architect"]
+      - ["frontend-dev", "backend-dev"]
+      - ["guardian"]
+
+  quick_dev_legacy:
+    steps:
+      - architect
+      - frontend-dev
+      - backend-dev
+      - guardian
+
+  frontend_only:
+    steps:
+      - architect
+      - ui-prompt
+      - frontend-dev
+      - guardian
+
+  frontend_parallel:
+    steps:
+      - ["architect"]
+      - ["ui-prompt", "ui-generator"]
+      - ["frontend-dev"]
+      - ["guardian"]
+
+  backend_only:
+    steps:
+      - architect
+      - backend-dev
+      - guardian
+
+  deployment:
+    steps:
+      - operator
+      - guardian
+
+  ui_design:
+    steps:
+      - architect
+      - ui-prompt
+      - ui-generator

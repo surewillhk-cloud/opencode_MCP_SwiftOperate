@@ -1,0 +1,9 @@
+langgraph>=0.0.20
+langchain-core>=0.1.0
+langchain-openai>=0.0.5
+langchain-anthropic>=0.1.0
+pyyaml>=6.0
+python-dotenv>=1.0.0
+pyfiglet>=0.8.post1
+rich>=13.0.0
+aiohttp>=3.9.0
