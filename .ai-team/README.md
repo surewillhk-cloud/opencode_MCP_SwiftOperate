@@ -38,49 +38,114 @@ opencode_MCP_SwiftOperate/
 
 ---
 
-## 快速开始
+## 快速开始（傻瓜式操作）
 
-### 1. 安装依赖
+### 步骤 1：启动 OpenCode
+
+打开终端，输入：
+
+```bash
+opencode /path/to/opencode_MCP_SwiftOperate
+```
+
+> 💡 提示：将文件夹拖入终端即可自动显示路径
+
+### 步骤 2：初始化
+
+启动后，输入 `开始` 或 `start`，系统会自动检测 API 配置。
+
+---
+
+## 两种模式详解
+
+### 模式一：有外部 API Key
+
+当你配置了有效的 API Key（如 OpenRouter）时，系统会调用外部 LLM 执行任务。
+
+#### 配置 API Key
 
 ```bash
 cd ./.ai-team
-pip install -r requirements.txt
+cp .env.example .env
+# 编辑 .env，填入你的 API Key
 ```
 
-### 2. 配置 MCP
-
-创建 `~/.mcp/agent-team.json`：
-
-```json
-{
-  "mcpServers": {
-    "agent-team": {
-      "command": "python3",
-      "args": ["./ai-team/mcp_server.py"],
-      "env": {}
-    }
-  }
-}
+推荐 OpenRouter：
+```
+OPENROUTER_API_KEY=sk-or-v1-xxxxxxxxxxxx
 ```
 
-### 3. 验证
+#### 使用方式
 
-```bash
-python3 proof.py
+1. 启动 OpenCode → 输入 `开始`
+2. 输入需求，例如：`开发一个 todo app`
+3. 系统自动执行，工作流自动流转直到完成
+
+---
+
+### 模式二：无 API Key（Native Mode）
+
+没有配置有效 API Key 时，使用当前 AI 直接执行任务。
+
+#### 特点
+
+- ✅ 无需 API Key
+- ✅ 使用当前 AI 能力
+- ⚠️ 每个阶段完成后需要确认才能继续
+- ⚠️ 复杂任务建议先呼出对应 Agent 角色
+
+#### 使用方式
+
+1. 启动 OpenCode → 输入 `开始`
+2. 选择"没有 API Key"
+
+```
+【⚙️ API 配置检查】
+
+我检测到你的 .env 还没有配置有效的 API Key。
+
+请选择：
+1. 提供 API Key，我帮你配置
+2. 回复"没有"，我将使用当前 AI 直接执行任务
 ```
 
-预期输出：
-```
-=== LLM Agent System - Proof of Concept ===
+3. 输入需求，例如：`开发一个 todo app`
 
-✓ Config loading: PASS
-✓ Skill loader: PASS (26 skills)
-✓ Agent node creation: PASS
-✓ Workflow execution: PASS
-✓ Orchestrator: PASS
+#### Native Mode 工作流程示例
 
-=== All Tests PASSED ===
 ```
+用户: 开发一个 todo app
+
+AI:
+【第一阶段 - Architect】
+我理解你的需求：开发一个简单的 Todo 应用。
+
+[暂停等待确认]
+用户: 继续
+
+AI:
+【第二阶段 - Frontend + Backend】
+[开始编写代码]
+
+[暂停等待确认]
+用户: 继续
+
+AI:
+【第三阶段 - Guardian】
+[运行测试，检查代码]
+
+完成！
+```
+
+#### ⚠️ 关键提示
+
+1. **每个阶段都需要确认**：看到 "✅ 已完成 xxx，等待确认继续..." 时，输入"继续"
+
+2. **建议先呼出 Agent 角色**：
+   - "现在你扮演 frontend-dev agent"
+   - "现在你扮演测试工程师"
+
+3. **卡住时**：输入 `/compact` 重新对齐上下文
 
 ---
 
@@ -92,18 +157,8 @@ python3 proof.py
 execute_workflow(task: str, workflow: str) -> dict
 ```
 
-**参数：**
 - `task`: 用户需求描述
 - `workflow`: 工作流名称
-
-**返回值：**
-```python
-{
-  "status": "success" | "native_mode" | "error",
-  "message": "...",
-  "results": {...}
-}
-```
 
 ### continue_workflow
 
@@ -113,66 +168,17 @@ Native Mode 下继续工作流。
 continue_workflow(task: str, workflow: str, completed_agents: list) -> dict
 ```
 
-**参数：**
-- `task`: 原始任务描述
-- `workflow`: 工作流名称
-- `completed_agents`: 已完成的 Agent 列表
-
 ### execute_agent
 
 调用单个 Agent。
 
 ```python
-execute_agent(agent_name: str, task: str, context: dict, history: list) -> dict
+execute_agent(agent: str, task: str) -> dict
 ```
 
-**参数：**
-- `agent_name`: Agent 名称
-- `task`: 任务描述
-- `context`: 上下文
-- `history`: 历史记录
+### list_workflows / list_agents
 
-### list_workflows
-
-列出所有工作流。
-
-### list_agents
-
-列出所有 Agent。
-
----
-
-## Native Mode 实现
-
-### base.py
-
-```python
-def _execute_native(self, task: str) -> dict:
-    """
-    Native Mode: 返回 Agent 定义给当前 AI
-    """
-    return {
-        "status": "native",
-        "agent_name": self.agent_name,
-        "agent_definition": self.get_agent_definition(),
-        "skills": self.skills,
-        "task": task
-    }
-```
-
-### orchestrator.py
-
-```python
-# 检测 native mode
-if is_native_mode():
-    # 返回阶段结果，暂停工作流
-    return {
-        "status": "stage_complete",
-        "completed_agents": completed,
-        "next_agents": next_agents,
-        "message": "等待继续..."
-    }
-```
+列出所有工作流 / Agent。
 
 ---
 
@@ -215,42 +221,26 @@ workflows:
 ## Skills 列表（26个）
 
 ### 开发类
-- architecture-design
-- prd-methodology
-- dev-standards
-- code-generation
-- code-refactoring
+- architecture-design, prd-methodology
+- dev-standards, code-generation, code-refactoring
 - composition-patterns
 
 ### UI 类
-- ui-figma-playbook
-- ui-imagen-guide
-- ui-aistudio-guide
+- ui-figma-playbook, ui-imagen-guide, ui-aistudio-guide
 - web-design-guidelines
 
 ### 测试类
-- test-checklist
-- pytest-guide
-- e2e-testing
-- integration-testing
+- test-checklist, pytest-guide, e2e-testing, integration-testing
 
 ### 安全类
-- security-audit
-- vulnerability-scan
-- owasp-security
-- bug-bounty
+- security-audit, vulnerability-scan, owasp-security, bug-bounty
 
 ### DevOps 类
-- devops-automation
-- vercel-deploy
+- devops-automation, vercel-deploy
 
 ### 其他
-- mvp-sequencing
-- protocol-design
-- token-economics
-- changelog-format
-- blockchain-standards
-- x-content-strategy
+- mvp-sequencing, protocol-design, token-economics
+- changelog-format, blockchain-standards, x-content-strategy
 
 ---
 
@@ -262,28 +252,16 @@ workflows:
 python3 proof.py
 ```
 
-### 测试新 Skills
-
-```bash
-python3 -c "
-from src.core.skill_loader import SkillLoader
-
-skills = ['pytest-guide', 'e2e-testing', 'vulnerability-scan', 'owasp-security', 'bug-bounty']
-for s in skills:
-    content = SkillLoader.load_skill(s)
-    print(f'{s}: {len(content)} chars')
-"
+预期输出：
 ```
+=== LLM Agent System - Proof of Concept ===
 
-### 测试 Guardian 配置
+✓ Config loading: PASS
+✓ Skill loader: PASS (26 skills)
+✓ Agent node creation: PASS
+✓ Workflow execution: PASS
 
-```bash
-python3 -c "
-from src.agents.base import get_agent_node
-
-guardian = get_agent_node('guardian')
-print('Guardian skills:', guardian.skills)
-"
+=== All Tests PASSED ===
 ```
 
 ---
@@ -293,7 +271,6 @@ print('Guardian skills:', guardian.skills)
 ### MCP 服务未启动
 
 ```bash
-# 手动测试
 python3 ./.ai-team/mcp_server.py
 ```
 
@@ -326,7 +303,7 @@ print(result)
  / ___| _ __ ___   __ _ _ __| |_  | | | |
  \___ \| '_ ` _ \ / _` | '__| __| | | | |
   ___) | | | | | (_| | |  | |_  | |_| |
- |____/|_| |_| |_|\__,_|_|   \__|  \___/  
+ |____/|_| |_| |_|\__,_|_|   \__| \___/  
  
   🟡 LLM Agent Team  v1.0
   Dynamic Model | Parallel Exec | Auto-Security
