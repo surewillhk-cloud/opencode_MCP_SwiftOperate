@@ -19,14 +19,16 @@ opencode_MCP_SwiftOperate/
 │   │   │   ├── router.py          # LLM 路由
 │   │   │   ├── workflow.py        # 工作流
 │   │   │   ├── skill_loader.py    # Skill 加载
-│   │   │   └── config.py          # 配置加载
+│   │   │   ├── config.py          # 配置加载
+│   │   │   ├── model_factory.py   # 模型工厂
+│   │   │   └── ...                # 其他模块
 │   │   ├── agents/
 │   │   │   └── base.py            # Agent 基类
 │   │   └── utils/
 │   │       └── banner.py          # Logo
 │   ├── opencode-agent-skill/
 │   │   └── .opencode/
-│   │       ├── agent/             # 7 个 Agent prompt
+│   │       ├── agent/             # 7 个 Agent 定义
 │   │       └── skills/            # 26 个 Skills
 │   ├── mcp_server.py              # MCP 服务
 │   ├── main.py                    # 入口
@@ -38,147 +40,205 @@ opencode_MCP_SwiftOperate/
 
 ---
 
-## 快速开始（傻瓜式操作）
+## Agents 详解（7个）
 
-### 步骤 1：启动 OpenCode
+### 1. Architect（架构师）
+- **职责**：需求分析、任务分发、进度管理、并发调研
+- **可调用子 Agent**：ui-prompt, ui-generator, frontend-dev, backend-dev, guardian, operator
+- **Skills**：architecture-design, prd-methodology
 
-打开终端，输入：
+### 2. UI-Prompt（UI 提示词工程师）
+- **职责**：生成高质量 UI 设计提示词
+- **Skills**：ui-figma-playbook, ui-imagen-guide, ui-aistudio-guide
 
-```bash
-opencode /path/to/opencode_MCP_SwiftOperate
-```
+### 3. UI-Generator（UI 可视化生成专家）
+- **职责**：根据提示词生成 UI 设计
+- **Skills**：ui-figma-playbook, web-design-guidelines
 
-> 💡 提示：将文件夹拖入终端即可自动显示路径
+### 4. Frontend-Dev（前端开发者）
+- **职责**：前端代码开发
+- **Skills**：dev-standards, web-design-guidelines, composition-patterns, vercel-deploy
 
-### 步骤 2：初始化
+### 5. Backend-Dev（后端开发者）
+- **职责**：后端代码开发
+- **Skills**：dev-standards, architecture-design
 
-启动后，输入 `开始` 或 `start`，系统会自动检测 API 配置。
+### 6. Guardian（质量守护者）
+- **职责**：QA 测试 + 安全审计
+- **Skills**（9个）：test-checklist, pytest-guide, e2e-testing, integration-testing, security-audit, vulnerability-scan, owasp-security, bug-bounty, code-refactoring
+
+### 7. Operator（运维工程师）
+- **职责**：部署和运维
+- **Skills**：devops-automation, vercel-deploy
 
 ---
 
-## 两种模式详解
+## Skills 列表（26个）
 
-### 模式一：有外部 API Key
+### 开发类（6个）
+- architecture-design - 系统架构设计
+- prd-methodology - 需求分析方法
+- dev-standards - 开发规范
+- code-generation - 代码生成
+- code-refactoring - 代码重构
+- composition-patterns - 组件组合模式
 
-当你配置了有效的 API Key（如 OpenRouter）时，系统会调用外部 LLM 执行任务。
+### UI 类（4个）
+- ui-figma-playbook - Figma 指南
+- ui-imagen-guide - Imagen 指南
+- ui-aistudio-guide - AISTudio 指南
+- web-design-guidelines - 网页设计规范
 
-#### 配置 API Key
+### 测试类（4个）
+- test-checklist - 测试清单
+- pytest-guide - Pytest 指南
+- e2e-testing - 端到端测试
+- integration-testing - 集成测试
+
+### 安全类（4个）
+- security-audit - 安全审计
+- vulnerability-scan - 漏洞扫描
+- owasp-security - OWASP 安全
+- bug-bounty - 渗透测试
+
+### DevOps 类（2个）
+- devops-automation - DevOps 自动化
+- vercel-deploy - Vercel 部署
+
+### 其他类（6个）
+- mvp-sequencing - MVP 排序
+- protocol-design - 协议设计
+- token-economics - 代币经济
+- changelog-format - 变更日志
+- blockchain-standards - 区块链标准
+- x-content-strategy - 内容策略
+
+---
+
+## 工作流详解（7个）
+
+### full_product（完整产品开发）
+```
+architect → ui-prompt → ui-generator → frontend-dev → backend-dev → guardian
+```
+
+### quick_dev（快速开发）⭐推荐
+```
+[architect] → [frontend-dev + backend-dev] → [guardian]
+```
+
+### frontend_only（仅前端）
+```
+architect → ui-prompt → frontend-dev → guardian
+```
+
+### backend_only（仅后端）
+```
+architect → backend-dev → guardian
+```
+
+### frontend_parallel（前端并行）
+```
+[architect] → [ui-prompt + ui-generator] → [frontend-dev] → [guardian]
+```
+
+### deployment（部署）
+```
+operator → guardian
+```
+
+### ui_design（UI 设计）
+```
+architect → ui-prompt → ui-generator
+```
+
+---
+
+## 快速开始
+
+### 1. 安装依赖
 
 ```bash
 cd ./.ai-team
-cp .env.example .env
-# 编辑 .env，填入你的 API Key
+pip install -r requirements.txt
 ```
 
-推荐 OpenRouter：
-```
-OPENROUTER_API_KEY=sk-or-v1-xxxxxxxxxxxx
-```
+### 2. 配置 MCP
 
-#### 使用方式
+创建 `~/.mcp/agent-team.json`：
 
-1. 启动 OpenCode → 输入 `开始`
-2. 输入需求，例如：`开发一个 todo app`
-3. 系统自动执行，工作流自动流转直到完成
-
----
-
-### 模式二：无 API Key（Native Mode）
-
-没有配置有效 API Key 时，使用当前 AI 直接执行任务。
-
-#### 特点
-
-- ✅ 无需 API Key
-- ✅ 使用当前 AI 能力
-- ⚠️ 每个阶段完成后需要确认才能继续
-- ⚠️ 复杂任务建议先呼出对应 Agent 角色
-
-#### 使用方式
-
-1. 启动 OpenCode → 输入 `开始`
-2. 选择"没有 API Key"
-
-```
-【⚙️ API 配置检查】
-
-我检测到你的 .env 还没有配置有效的 API Key。
-
-请选择：
-1. 提供 API Key，我帮你配置
-2. 回复"没有"，我将使用当前 AI 直接执行任务
+```json
+{
+  "mcpServers": {
+    "agent-team": {
+      "command": "python3",
+      "args": ["./ai-team/mcp_server.py"],
+      "env": {}
+    }
+  }
+}
 ```
 
-3. 输入需求，例如：`开发一个 todo app`
+### 3. 验证
 
-#### Native Mode 工作流程示例
-
-```
-用户: 开发一个 todo app
-
-AI:
-【第一阶段 - Architect】
-我理解你的需求：开发一个简单的 Todo 应用。
-
-[暂停等待确认]
-用户: 继续
-
-AI:
-【第二阶段 - Frontend + Backend】
-[开始编写代码]
-
-[暂停等待确认]
-用户: 继续
-
-AI:
-【第三阶段 - Guardian】
-[运行测试，检查代码]
-
-完成！
+```bash
+python3 proof.py
 ```
 
-#### ⚠️ 关键提示
+预期输出：
+```
+=== LLM Agent System - Proof of Concept ===
 
-1. **每个阶段都需要确认**：看到 "✅ 已完成 xxx，等待确认继续..." 时，输入"继续"
+✓ Config loading: PASS
+✓ Skill loader: PASS (26 skills)
+✓ Agent node creation: PASS
+✓ Workflow execution: PASS
 
-2. **建议先呼出 Agent 角色**：
-   - "现在你扮演 frontend-dev agent"
-   - "现在你扮演测试工程师"
-
-3. **卡住时**：输入 `/compact` 重新对齐上下文
+=== All Tests PASSED ===
+```
 
 ---
 
 ## MCP 工具
 
-### execute_workflow
+### execute_workflow(task, workflow)
+执行完整工作流
+
+### continue_workflow(task, workflow, completed_agents)
+Native Mode 下继续工作流
+
+### execute_agent(agent, task)
+调用单个 Agent
+
+### list_workflows
+列出所有工作流
+
+### list_agents
+列出所有 Agent
+
+---
+
+## Native Mode 实现
+
+### 无 API Key 时的行为
+
+1. Agent 执行时返回 Agent 定义给当前 AI
+2. 当前 AI 直接代入角色执行任务
+3. 每个阶段完成后暂停，等待确认
+
+### 代码示例
 
 ```python
-execute_workflow(task: str, workflow: str) -> dict
+# base.py
+def _execute_native(self, task: str) -> dict:
+    return {
+        "status": "native",
+        "agent_name": self.agent_name,
+        "agent_definition": self.get_agent_definition(),
+        "skills": self.skills,
+        "task": task
+    }
 ```
-
-- `task`: 用户需求描述
-- `workflow`: 工作流名称
-
-### continue_workflow
-
-Native Mode 下继续工作流。
-
-```python
-continue_workflow(task: str, workflow: str, completed_agents: list) -> dict
-```
-
-### execute_agent
-
-调用单个 Agent。
-
-```python
-execute_agent(agent: str, task: str) -> dict
-```
-
-### list_workflows / list_agents
-
-列出所有工作流 / Agent。
 
 ---
 
@@ -218,50 +278,12 @@ workflows:
 
 ---
 
-## Skills 列表（26个）
-
-### 开发类
-- architecture-design, prd-methodology
-- dev-standards, code-generation, code-refactoring
-- composition-patterns
-
-### UI 类
-- ui-figma-playbook, ui-imagen-guide, ui-aistudio-guide
-- web-design-guidelines
-
-### 测试类
-- test-checklist, pytest-guide, e2e-testing, integration-testing
-
-### 安全类
-- security-audit, vulnerability-scan, owasp-security, bug-bounty
-
-### DevOps 类
-- devops-automation, vercel-deploy
-
-### 其他
-- mvp-sequencing, protocol-design, token-economics
-- changelog-format, blockchain-standards, x-content-strategy
-
----
-
 ## 测试
 
 ### 运行测试
 
 ```bash
 python3 proof.py
-```
-
-预期输出：
-```
-=== LLM Agent System - Proof of Concept ===
-
-✓ Config loading: PASS
-✓ Skill loader: PASS (26 skills)
-✓ Agent node creation: PASS
-✓ Workflow execution: PASS
-
-=== All Tests PASSED ===
 ```
 
 ---
@@ -277,21 +299,7 @@ python3 ./.ai-team/mcp_server.py
 ### 导入错误
 
 ```bash
-# 检查 Python 路径
-python3 -c "import sys; print(sys.path)"
-
-# 手动添加路径
 export PYTHONPATH=./ai-team:$PYTHONPATH
-```
-
-### API 配置检查
-
-```bash
-python3 -c "
-from src.core.config_checker import check_api_config
-result = check_api_config()
-print(result)
-"
 ```
 
 ---
