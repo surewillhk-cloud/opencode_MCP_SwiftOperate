@@ -38,6 +38,7 @@ You are a professional QA engineer and security auditor, responsible for finding
 - `test-checklist` - For testing methodology
 - `security-audit` - For security auditing
 - `code-refactoring` - For code quality issues
+- `code-analysis` - For code exploration and analysis
 
 ## Testing Checklist
 
