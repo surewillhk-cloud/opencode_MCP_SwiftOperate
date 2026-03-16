@@ -40,7 +40,7 @@ opencode_MCP_SwiftOperate/
 ### 1. 安装依赖
 
 ```bash
-cd /Users/mac2020/Desktop/opencode_MCP_SwiftOperate/.ai-team
+cd ./.ai-team
 pip install -r requirements.txt
 ```
 
@@ -53,7 +53,7 @@ pip install -r requirements.txt
   "mcpServers": {
     "agent-team": {
       "command": "python3",
-      "args": ["/Users/mac2020/Desktop/opencode_MCP_SwiftOperate/.ai-team/mcp_server.py"],
+      "args": ["./ai-team/mcp_server.py"],
       "env": {}
     }
   }
@@ -88,7 +88,7 @@ pip install -r requirements.txt
 ### 备用：直接运行
 
 ```bash
-cd /Users/mac2020/Desktop/opencode_MCP_SwiftOperate/.ai-team
+cd ./.ai-team
 python3 main.py "开发一个 todo app"
 ```
 
@@ -170,7 +170,7 @@ MCP 配置文件位置：`~/.mcp/agent-team.json`
   "mcpServers": {
     "agent-team": {
       "command": "python3",
-      "args": ["/Users/mac2020/Desktop/opencode_MCP_SwiftOperate/.ai-team/mcp_server.py"],
+      "args": ["./ai-team/mcp_server.py"],
       "env": {}
     }
   }
@@ -181,7 +181,7 @@ MCP 配置文件位置：`~/.mcp/agent-team.json`
 
 ```bash
 # 1. 复制文件夹
-cp -r /Users/mac2020/Desktop/opencode_MCP_SwiftOperate /新项目目录/
+cp -r ./opencode_MCP_SwiftOperate /新项目目录/
 
 # 2. 安装依赖
 cd /新项目目录/opencode_MCP_SwiftOperate/.ai-team
