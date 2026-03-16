@@ -3,7 +3,7 @@
   "mcp": {
     "llm_agents": {
       "type": "local",
-      "command": ["python3", ".ai-team/mcp_server.py"]
+      "command": ["python3", "/Users/mac2020/Desktop/opencode_MCP_SwiftOperate/.ai-team/mcp_server.py"]
     }
   }
 }

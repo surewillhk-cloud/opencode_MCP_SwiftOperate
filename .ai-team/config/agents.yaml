@@ -96,6 +96,12 @@ agents:
       - "test-checklist"
       - "security-audit"
       - "code-refactoring"
+      - "pytest-guide"
+      - "e2e-testing"
+      - "integration-testing"
+      - "vulnerability-scan"
+      - "owasp-security"
+      - "bug-bounty"
     max_iterations: 5
 
   operator:

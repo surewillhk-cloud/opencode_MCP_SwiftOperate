@@ -8,6 +8,24 @@ from .config import config
 
 logger = logging.getLogger(__name__)
 
+API_KEYS = [
+    "OPENROUTER_API_KEY",
+    "OPENAI_API_KEY",
+    "ANTHROPIC_API_KEY",
+    "GOOGLE_API_KEY",
+    "MINIMAX_API_KEY",
+    "NVIDIA_API_KEY",
+]
+
+
+def _get_valid_api_key() -> Optional[str]:
+    """获取有效的 API Key，忽略 placeholder 和空字符串"""
+    for key in API_KEYS:
+        value = os.getenv(key, "")
+        if value and not value.startswith("your-") and len(value) > 10:
+            return value
+    return None
+
 
 class ModelFactory:
     _instances: Dict[str, Any] = {}
@@ -25,6 +43,12 @@ class ModelFactory:
             provider_name = model_cfg.get("provider", "openrouter")
 
         provider_cfg = config.providers.get(provider_name, {})
+
+        if not _get_valid_api_key():
+            raise ValueError(
+                f"No valid API key found. Please configure one of: "
+                f"{', '.join(API_KEYS)}"
+            )
 
         if provider_name == "openrouter":
             llm = ChatOpenAI(
@@ -78,9 +102,15 @@ class ModelFactory:
                 temperature=model_cfg.get("temperature", 0.7),
             )
         else:
+            api_key = _get_valid_api_key()
+            if not api_key:
+                raise ValueError(
+                    f"No valid API key found. Please configure one of: "
+                    f"{', '.join(API_KEYS)}"
+                )
             llm = ChatOpenAI(
                 model=model_name,
-                api_key=os.getenv("OPENROUTER_API_KEY"),
+                api_key=api_key,
                 base_url="https://openrouter.ai/api/v1",
                 temperature=model_cfg.get("temperature", 0.7),
             )

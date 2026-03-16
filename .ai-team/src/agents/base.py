@@ -88,6 +88,13 @@ class LLMAgentNode:
                 messages.append(SystemMessage(content=content))
 
         context_str = self._serialize_context(context)
+
+        # 检查是否有有效API，没有则使用native模式
+        from ..core.config_checker import has_valid_api_key
+
+        if not has_valid_api_key():
+            return self._execute_native(task, context, history, iteration)
+
         if context_str:
             messages.append(
                 HumanMessage(content=f"Context:\n{context_str}\n\nTask: {task}")
@@ -138,6 +145,44 @@ class LLMAgentNode:
 
     def get_current_model(self) -> str:
         return self.model_name
+
+    def _execute_native(
+        self, task: str, context: dict, history: list, iteration: int
+    ) -> dict:
+        """无API时，由当前AI直接代入角色执行"""
+        context_str = self._serialize_context(context)
+
+        native_prompt = f"""## 任务：{self.agent_name}
+
+### 你的角色
+{self.system_prompt}
+
+### 上下文信息
+{context_str}
+
+### 需要完成的任务
+{task}
+
+### 执行要求
+1. 直接执行上述任务
+2. 使用你作为 {self.agent_name} 的能力完成
+3. 返回你的执行结果
+
+请现在就开始执行任务。"""
+
+        new_history = history + [
+            {"role": "user", "content": f"[{self.agent_name}] {task}"},
+            {"role": "assistant", "content": native_prompt},
+        ]
+
+        return {
+            "result": native_prompt,
+            "current_agent": self.agent_name,
+            "history": new_history,
+            "iteration": iteration + 1,
+            "context": {**context, "last_result": "native_mode"},
+            "native_mode": True,
+        }
 
 
 _agent_nodes: Dict[str, LLMAgentNode] = {}

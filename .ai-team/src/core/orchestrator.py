@@ -1,6 +1,7 @@
 from typing import Dict, Any, Optional, List
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import logging
+import sys
 from .config import config
 from .router import LLMRouter
 from .workflow import execute_workflow, list_workflows
@@ -147,10 +148,20 @@ class WorkflowOrchestrator:
                     "completed_agents": [],
                 }
 
+            # 检查是否有有效API，没有则使用native模式
+            from .config_checker import has_valid_api_key
+
+            is_native = not has_valid_api_key()
+
+            # 无API时强制禁用dynamic_mode
+            if is_native:
+                self.dynamic_mode = False
+
             if self.dynamic_mode:
                 return self._execute_with_dynamic_models(task, workflow_name, steps)
 
-            logger.info(f"Using workflow: {workflow_name} ({' → '.join(steps)})")
+            steps_str = " → ".join(str(s) for s in steps)
+            logger.info(f"Using workflow: {workflow_name} ({steps_str})")
             return self._execute_steps(task, steps)
 
         return self.auto.route_and_execute(task)
@@ -179,25 +190,31 @@ class WorkflowOrchestrator:
 
         confirmed_selections = model_selections
         if not self.auto_confirm:
-            user_input = input("").strip().lower()
-            if user_input == "a":
-                print("选择复杂度级别: low/medium/high/advanced")
-                level = input("> ").strip().lower()
-                if level in ["low", "medium", "high", "advanced"]:
-                    confirmed_selections = DynamicModelSelector.adjust_models(
-                        model_selections, level
-                    )
-                    costs = DynamicModelSelector.estimate_cost(confirmed_selections)
-                    print(
-                        f"已调整为 {level} 配置，预估成本: ${costs.get('total', 0):.2f}"
-                    )
-            elif user_input == "n":
-                print("取消执行")
-                return {
-                    "result": "Cancelled by user",
-                    "history": [],
-                    "completed_agents": [],
-                }
+            is_interactive = hasattr(sys.stdin, "isatty") and sys.stdin.isatty()
+            if not is_interactive:
+                logger.warning(
+                    "Non-interactive environment detected, skipping model confirmation"
+                )
+            else:
+                user_input = input("").strip().lower()
+                if user_input == "a":
+                    print("选择复杂度级别: low/medium/high/advanced")
+                    level = input("> ").strip().lower()
+                    if level in ["low", "medium", "high", "advanced"]:
+                        confirmed_selections = DynamicModelSelector.adjust_models(
+                            model_selections, level
+                        )
+                        costs = DynamicModelSelector.estimate_cost(confirmed_selections)
+                        print(
+                            f"已调整为 {level} 配置，预估成本: ${costs.get('total', 0):.2f}"
+                        )
+                elif user_input == "n":
+                    print("取消执行")
+                    return {
+                        "result": "Cancelled by user",
+                        "history": [],
+                        "completed_agents": [],
+                    }
 
         for agent_name, model in confirmed_selections.items():
             config.update_agent_config(agent_name, {"model": model})
@@ -208,7 +225,8 @@ class WorkflowOrchestrator:
         ModelFactory._instances.clear()
         clear_agent_node_cache()
 
-        logger.info(f"Using workflow: {workflow_name} ({' → '.join(steps)})")
+        steps_str = " → ".join(str(s) for s in steps)
+        logger.info(f"Using workflow: {workflow_name} ({steps_str})")
         return self._execute_steps(task, steps, model_selections=confirmed_selections)
 
     def _execute_steps(
@@ -302,11 +320,20 @@ class WorkflowOrchestrator:
         completed_agents = []
         current_task = task
 
+        from .config_checker import has_valid_api_key
+
+        is_native = not has_valid_api_key()
+
         for stage_idx, stage in enumerate(stages):
+            remaining_stages = stages[stage_idx + 1 :]
+
             if len(stage) == 1:
                 logger.info(f"[Stage {stage_idx + 1}] Executing: {stage[0]}")
 
-                context = {"completed": completed_agents}
+                context = {
+                    "completed": completed_agents,
+                    "remaining_stages": remaining_stages,
+                }
                 if research_context and stage[0] == "architect":
                     context.update(research_context)
 
@@ -320,8 +347,24 @@ class WorkflowOrchestrator:
                     }
                 )
 
+                # Native mode: 执行一个stage后暂停
+                if is_native and result.get("native_mode"):
+                    return {
+                        "task": task,
+                        "result": result.get("result", ""),
+                        "history": history,
+                        "completed_agents": completed_agents + stage,
+                        "next_stage": remaining_stages[0] if remaining_stages else None,
+                        "remaining_stages": remaining_stages,
+                        "native_mode": True,
+                        "waiting_confirmation": len(remaining_stages) > 0,
+                        "message": "✅ 已完成 " + ", ".join(stage) + "，等待确认继续..."
+                        if remaining_stages
+                        else "✅ 工作流已完成！",
+                    }
+
                 history.extend(result.get("history", []))
-                completed_agents.append(stage[0])
+                completed_agents.extend(stage)
                 last_result = result.get("result", "")
                 current_task = AutoOrchestrator._truncate_context(
                     f"Previous results: {last_result}\n\nOriginal task: {task}"
@@ -374,6 +417,23 @@ class WorkflowOrchestrator:
                         for name, r in stage_results.items()
                     ]
                 )
+
+                # Native mode: 并行阶段执行完后暂停
+                if is_native:
+                    return {
+                        "task": task,
+                        "result": combined_results,
+                        "history": history,
+                        "completed_agents": completed_agents + stage,
+                        "next_stage": remaining_stages[0] if remaining_stages else None,
+                        "remaining_stages": remaining_stages,
+                        "native_mode": True,
+                        "waiting_confirmation": len(remaining_stages) > 0,
+                        "message": "✅ 已完成 " + ", ".join(stage) + "，等待确认继续..."
+                        if remaining_stages
+                        else "✅ 工作流已完成！",
+                    }
+
                 current_task = AutoOrchestrator._truncate_context(
                     f"Previous parallel results:\n{combined_results}\n\nOriginal task: {task}"
                 )

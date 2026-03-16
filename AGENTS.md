@@ -94,6 +94,11 @@ Describe your requirements, I'll coordinate the appropriate Agent team.
   - UI设计 → `ui_design`
   - 部署 → `deployment`
 
+- Native Mode（无 API Key）时：
+  - 使用 `execute_workflow` 开始工作流
+  - 每个阶段完成后，使用 `continue_workflow` 继续
+  - 已完成的 Agent 列表通过参数传递
+
 不需要用户指定工具名或 workflow 名，AI 自行判断后直接调用。
 
 
@@ -124,24 +129,36 @@ Describe your requirements, I'll coordinate the appropriate Agent team.
 | guardian | minimax-m2.5 | 质量守护（QA+安全） |
 | operator | google/gemini-3.1-flash-lite-preview | DevOps 运维 |
 
-## Skills (21)
+## Skills (26)
 
+### 开发类
 - architecture-design, prd-methodology
+- dev-standards, code-generation, code-refactoring
+- composition-patterns
+
+### UI 类
 - ui-figma-playbook, ui-imagen-guide, ui-aistudio-guide
-- web-design-guidelines, dev-standards
-- composition-patterns, vercel-deploy
-- test-checklist, security-audit, code-refactoring
-- devops-automation
-- agent-creator, blockchain-standards, changelog-format
-- code-generation, mvp-sequencing, protocol-design
-- token-economics, x-content-strategy
+- web-design-guidelines
+
+### 测试类
+- test-checklist, pytest-guide, e2e-testing, integration-testing
+
+### 安全类
+- security-audit, vulnerability-scan, owasp-security, bug-bounty
+
+### DevOps 类
+- devops-automation, vercel-deploy
+
+### 其他
+- mvp-sequencing, protocol-design, token-economics
+- changelog-format, blockchain-standards, x-content-strategy
 
 ## 工作流
 
 | Workflow | 步骤 |
 |----------|------|
 | full_product | architect → ui-prompt → ui-generator → frontend-dev → backend-dev → guardian |
-| quick_dev | architect → frontend-dev → backend-dev → guardian |
+| quick_dev | [architect] → [frontend-dev + backend-dev] → [guardian] |
 | frontend_only | architect → ui-prompt → frontend-dev → guardian |
 | backend_only | architect → backend-dev → guardian |
 | deployment | operator → guardian |
@@ -237,7 +254,7 @@ Describe your requirements, I'll coordinate the appropriate Agent team.
 ## 快速开始
 
 ```bash
-cd llm-agents
+cd ./.ai-team
 pip install -r requirements.txt
 cp .env.example .env
 
@@ -302,14 +319,14 @@ python main.py "build a simple page" --no-dynamic
 
 ### MCP Server
 
-也可以通过 Claude Code / OpenCode 调用：
+通过 Claude Code / OpenCode 调用。配置 `~/.mcp/agent-team.json`：
 
 ```json
 {
   "mcpServers": {
     "agent-team": {
       "command": "python3",
-      "args": ["/path/to/llm-agents/mcp_server.py"]
+      "args": ["./ai-team/mcp_server.py"]
     }
   }
 }
@@ -320,7 +337,7 @@ python main.py "build a simple page" --no-dynamic
 ## 文件结构
 
 ```
-llm-agents/
+./.ai-team/
 ├── config/                      # 配置文件
 │   └── agents.yaml              # Agent 和工作流配置
 ├── src/                        # 源代码
@@ -338,7 +355,7 @@ llm-agents/
 ├── opencode-agent-skill/       # Agent 和 Skill 定义
 │   └── .opencode/
 │       ├── agent/             # 7 个 Agent prompt
-│       └── skills/            # 21 个 Skill
+│       └── skills/            # 26 个 Skill
 ├── mcp_server.py              # MCP Server
 ├── main.py                   # 入口
 ├── dev.sh                    # 开发脚本
@@ -348,9 +365,24 @@ llm-agents/
 ```
 ## 可用工具
 
-你有一个 MCP 工具 `llm-agents`，包含以下函数：
+你有一个 MCP 工具 `llm_agents`，包含以下函数：
+
+### 核心工具
 - `execute_workflow(task, workflow)` — 执行开发工作流
+- `continue_workflow(task, workflow, completed_agents)` — Native Mode 继续工作流
+- `execute_agent(agent_name, task, context, history)` — 调用单个 Agent
 - `list_workflows()` — 列出所有工作流
 - `list_agents()` — 列出所有 Agent
 
-收到开发需求时，**必须调用 `execute_workflow`**，不要自己直接执行 python 命令。
+### Native Mode 工作流程
+
+```
+1. 用户输入任务
+2. 调用 execute_workflow(task, workflow)
+3. 返回 stage_complete，等待用户确认
+4. 用户说"继续"
+5. 调用 continue_workflow(task, workflow, completed_agents)
+6. 重复步骤 3-5 直到完成
+```
+
+收到开发需求时，**必须调用 MCP 工具**，不要自己直接执行 python 命令。
