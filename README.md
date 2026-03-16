@@ -30,7 +30,7 @@ opencode_MCP_SwiftOperate/
 │   └── opencode-agent-skill/   # Agent 和 Skill 定义
 │       └── .opencode/
 │           ├── agent/           # 7 个 Agent prompt
-│           └── skills/          # 21 个 Skill
+│           └── skills/          # 26 个 Skill
 ├── AGENTS.md                   # 系统配置文档
 └── README.md                    # 说明文档
 ```
