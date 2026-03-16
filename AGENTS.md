@@ -129,12 +129,12 @@ Describe your requirements, I'll coordinate the appropriate Agent team.
 | guardian | minimax-m2.5 | 质量守护（QA+安全） |
 | operator | google/gemini-3.1-flash-lite-preview | DevOps 运维 |
 
-## Skills (26)
+## Skills (27)
 
 ### 开发类
 - architecture-design, prd-methodology
 - dev-standards, code-generation, code-refactoring
-- composition-patterns
+- code-analysis, composition-patterns
 
 ### UI 类
 - ui-figma-playbook, ui-imagen-guide, ui-aistudio-guide

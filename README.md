@@ -244,9 +244,9 @@ OPENROUTER_API_KEY=sk-or-v1-xxxxxxxxxxxx
 
 ---
 
-## Skills 详解（26个）
+## Skills 详解（27个）
 
-### 开发类（6个）
+### 开发类（7个）
 
 | Skill | 作用 | 使用场景 |
 |-------|------|----------|
@@ -255,6 +255,7 @@ OPENROUTER_API_KEY=sk-or-v1-xxxxxxxxxxxx
 | `dev-standards` | 代码规范、最佳实践 | 编写符合规范的代码 |
 | `code-generation` | 代码生成模板 | 快速生成重复代码 |
 | `code-refactoring` | 代码重构方法、模式 | 重构烂代码、提升质量 |
+| `code-analysis` | 代码分析、探索、审计 | 理解代码库、审计代码、提出优化方案 |
 | `composition-patterns` | 组件组合模式 | React/Vue 组件设计 |
 
 ### UI 类（4个）

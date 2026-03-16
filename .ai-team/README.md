@@ -73,14 +73,15 @@ opencode_MCP_SwiftOperate/
 
 ---
 
-## Skills 列表（26个）
+## Skills 列表（27个）
 
-### 开发类（6个）
+### 开发类（7个）
 - architecture-design - 系统架构设计
 - prd-methodology - 需求分析方法
 - dev-standards - 开发规范
 - code-generation - 代码生成
 - code-refactoring - 代码重构
+- code-analysis - 代码分析、探索、审计
 - composition-patterns - 组件组合模式
 
 ### UI 类（4个）
